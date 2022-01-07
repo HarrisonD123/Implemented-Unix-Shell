@@ -2,8 +2,9 @@
 
 Task
 ---
-Implement a simplified shell that can execute commands like a Unix shell and print the output to the screen.    
-Provide support for:
+Implement a simplified shell that can execute commands like a Unix shell and print the output to the screen.  
+  
+#### Provide support for: ####
 1. simple commands
 2. multiple simple commands on one line, separated by semicolons `ls;cal 1 2022`
 3. support excess white space or semicolons between commands `ls    ;;;; ;;; ; cal 1 2022`
