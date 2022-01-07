@@ -11,6 +11,7 @@
 enum redirection {REDIR, ADVREDIR};
 typedef enum redirection redirection;
 
+/*My shell's own error message*/
 void error_message() {
     char error_message[30] = "An error has occurred\n";
     write(STDOUT_FILENO, error_message, strlen(error_message));
@@ -35,14 +36,12 @@ void call_cd(char** myargv) {
     else {
         if(myargv[2] != NULL) {
             error_message();
-            //write(STDOUT_FILENO, "cd1", 3); //delete
             return;
         }
 
         success = chdir(myargv[1]);
         if(success < 0) {
             error_message();
-            //write(STDOUT_FILENO, "cd2", 3); //delete
         }
     }
 }
@@ -63,11 +62,13 @@ void call_pwd(char** myargv) {
 
 /*END OF BUILT_IN COMMANDS*/
 
+/*Helper for printing messages using the write() system call*/
 void myPrint(char *msg)
 {
     write(STDOUT_FILENO, msg, strlen(msg));
 }
 
+/*If the input is too long, read the rest of it and ignore it*/
 void handle_too_long(char* pinput, FILE *fp){
     while(1) {
                     pinput = fgets(pinput, 514, fp);
@@ -84,6 +85,7 @@ void handle_too_long(char* pinput, FILE *fp){
     
 }
 
+/*Test whether the input is all whitespace for error checking*/
 int all_white_space(char* pinput) {
     while(*pinput != '\0') {
         if(!isspace(*pinput)) {
@@ -94,6 +96,8 @@ int all_white_space(char* pinput) {
     return 1;
 }
 
+/*Parse input if multiple commands are entered in one line, separated by
+  ;'s. Place commands into a string array*/
 void parse_cmds(char* cmd_buff, char** multcmds) {
     cmd_buff[strlen(cmd_buff) - 1] = '\0';
     char* token = strtok(cmd_buff, ";");
@@ -107,6 +111,7 @@ void parse_cmds(char* cmd_buff, char** multcmds) {
     multcmds[i] = NULL;
 }
 
+/*Parse the arguments in a command and place them in a string array*/
 void parse_args(char* buff, char** myargv) {
     char* token = strtok(buff, " \t");
     int i = 0;
@@ -119,6 +124,8 @@ void parse_args(char* buff, char** myargv) {
     myargv[i] = NULL;
 }
 
+/*Test whether there are more than one redirection symbols in a command.
+  This will throw an error in the calling function*/
 int too_many_redir(char* cmd) {
     int num_redir = 0;
     while(*cmd != '\0') {
@@ -130,6 +137,7 @@ int too_many_redir(char* cmd) {
     return num_redir - 1;
 }
 
+/*Separate the arguments from the filename in a redirection command*/
 int parse_redir(char* buff, char** parsed_redir, redirection mode) {
     char* delim;
 
@@ -159,11 +167,11 @@ int parse_redir(char* buff, char** parsed_redir, redirection mode) {
     }
 }
 
+/*Creates a child process to execute a simple command*/
 void exec_cmd(char** myargv) {
     if(fork() == 0) {
         if(execvp(myargv[0], myargv) < 0) {
             error_message();
-            //write(STDOUT_FILENO, "exec", 4); //delete
             exit(0);
         }
     }
@@ -172,6 +180,8 @@ void exec_cmd(char** myargv) {
     }
 }
 
+/*Executes a redirection command. Creates a new file and uses dup2 to
+  redirect execvp's output from the screen to the file's file descriptor*/
 void exec_redir_cmd(char** myargv, char* filename) {
     int fd;
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -185,7 +195,6 @@ void exec_redir_cmd(char** myargv, char* filename) {
         dup2(fd, STDOUT_FILENO);
         if(execvp(myargv[0], myargv) < 0) {
             error_message();
-            //write(STDOUT_FILENO, "execredir", 9); //delete
             exit(0);
         }
     }
@@ -195,6 +204,11 @@ void exec_redir_cmd(char** myargv, char* filename) {
     }
 }
 
+/*Executes an advanced redirection command. Adds the command's output to the
+  front of an existing file by: 1) copying the file to a new temp file,
+  2) overwriting the file with the command's output, and
+  3) reading the temp file's contents and writing them back to the end of the
+  original file*/
 void exec_advredir_cmd(char** myargv, char* filename) {
     char buf[100];
     int bytes_read;
@@ -226,7 +240,6 @@ void exec_advredir_cmd(char** myargv, char* filename) {
         dup2(fdc, STDOUT_FILENO);
         if(execvp(myargv[0], myargv) < 0) {
             error_message();
-            //write(STDOUT_FILENO, "execredir", 9); //delete
             exit(0);
         }
     }
@@ -247,13 +260,9 @@ void exec_advredir_cmd(char** myargv, char* filename) {
     }
 }
 
+/*Calls functions to handle input for a simple command*/
 void simple_command(char* cmd, char** myargv) {
-    //printf("%ld\n", strlen(cmd_buff));
     parse_args(cmd, myargv);
-    /* for(int i = 0; i < num_cmd_items(myargv); i++) {
-        myPrint(myargv[i]);
-        write(STDOUT_FILENO, "\n", 1);
-    } */
 
     if(myargv[0] == NULL) {
         return;
@@ -273,6 +282,8 @@ void simple_command(char* cmd, char** myargv) {
     }
 }
 
+/*Error tests, then calls functions for either redirection or advanced
+  redirection, depending on the value of 'mode'*/
 void redir_command(char* cmd, char** myargv, redirection mode) {
     char* parsed_redir[2];
     char* filename[20];
@@ -293,12 +304,7 @@ void redir_command(char* cmd, char** myargv, redirection mode) {
         return;
     }
 
-    //printf("%ld\n", strlen(cmd_buff));
     parse_args(parsed_redir[0], myargv);
-    /* for(int i = 0; i < num_cmd_items(myargv); i++) {
-        myPrint(myargv[i]);
-        write(STDOUT_FILENO, "\n", 1);
-    } */
     parse_args(parsed_redir[1], filename);
 
     if(filename[1] != NULL) {
@@ -308,7 +314,7 @@ void redir_command(char* cmd, char** myargv, redirection mode) {
     else if(myargv[0] == NULL) {
         return;
     }
-    else if(strcmp(myargv[0], "exit") == 0) {
+    else if(strcmp(myargv[0], "exit") == 0) {//cannot redirect exit, cd, pwd
         error_message();
         return;
     }
@@ -341,7 +347,7 @@ int main(int argc, char *argv[])
 {
     char cmd_buff[514];
     char *pinput;
-    char* multcmds[50]; //bunch of internal frag
+    char* multcmds[50];
     char* myargv[100];
     FILE *fp;
 
@@ -349,12 +355,12 @@ int main(int argc, char *argv[])
         error_message();
         exit(0);
     }
-    if(argc == 2) { //Batch Mode
+    if(argc == 2) { //If program is run with a batch file, Batch Mode
         if((fp = fopen(argv[1], "r")) == NULL) {
             error_message();
             exit(0);
         }
-
+        /*read from batch file*/
         while((pinput = fgets(cmd_buff, 514, fp))) {
             if(all_white_space(pinput)) {
                 continue;
@@ -366,7 +372,8 @@ int main(int argc, char *argv[])
                 continue;
             }
     
-            
+            /*Determine whether the command is simple, a redirection, or an
+              advanced redirection*/
             else {
                 parse_cmds(cmd_buff, multcmds);
                 int i = 0;
@@ -386,9 +393,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    else {//Interactive Mode
+    else {//If no batch file, run in Interactive Mode
         while (1) {
         myPrint("myshell> ");
+        /*read from command line*/
         pinput = fgets(cmd_buff, 514, stdin); //if 514 == '\0' and 513 != \n -> 513 chars read -> throw away, throw error, and read rest and throw away
         if (!pinput) {
             error_message();
