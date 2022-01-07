@@ -23,3 +23,7 @@ How to run locally
 - There are batch files in the p4shell/batch-files directory. To run the shell with a batch file, type `./myshell` followed by the
   batchfile directory: `./myshell batch-files/1KCommand`
 - Use `exit` to exit the program
+
+NOTE
+---
+Only myshell.c is part of my project. Everything else was preprepared. All code is in C.
