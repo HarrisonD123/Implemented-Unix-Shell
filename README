@@ -1,4 +1,4 @@
-Markup : # Fully functional shell written in C using systems calls, concurrency, and file descriptors. #
+# Fully functional shell written in C using systems calls, concurrency, and file descriptors. #
 
 Task
 ---
