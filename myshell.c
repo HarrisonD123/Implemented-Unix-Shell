@@ -71,17 +71,17 @@ void myPrint(char *msg)
 /*If the input is too long, read the rest of it and ignore it*/
 void handle_too_long(char* pinput, FILE *fp){
     while(1) {
-                    pinput = fgets(pinput, 514, fp);
-                    if (!pinput) {
-                        break;
-                    }
-                    myPrint(pinput);
-                    if (pinput[strlen(pinput)-1] == '\n') {
-                        break;
-                    }
-                    
-                }
-                                error_message();
+        pinput = fgets(pinput, 514, fp);
+        if (!pinput) {
+            break;
+        }
+        myPrint(pinput);
+        if (pinput[strlen(pinput)-1] == '\n') {
+            break;
+        }
+        
+    }
+    error_message();
     
 }
 
